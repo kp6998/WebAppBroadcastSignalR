@@ -1,0 +1,170 @@
+﻿<head>
+    <script src="~/Scripts/jquery-2.2.4.min.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+</head>
+<style>
+    .list-container {
+        --light-color: #fff;
+        background: var(--light-color);
+        box-shadow: 0px 0px 15px 0px black;
+        width: 30%;
+        float: left;
+    }
+    .chat-container {
+        --light-color: #fff;
+        background: var(--light-color);
+        box-shadow: 0px 0px 15px 0px black;
+        width: 69%;
+        float: right;
+    }
+
+    .chat-header {
+        height: 10%;
+        display: flex;
+        align-items: center;
+        padding: 0px 30px;
+        background-color: #0652c0;
+        color: var(--light-color);
+        font-size: 1.5rem;
+    }
+        .chat-header .title {
+            padding-left: 10px;
+        }
+
+    .chat-body {
+        height: 75%;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 10px;
+        align-items: flex-end;
+        overflow-y: auto;
+    }
+
+    .chat-input {
+        height: 10%;
+        display: flex;
+        align-items: center;
+        border-top: 1px solid #ccc;
+    }
+
+    .input-sec {
+        flex: 9;
+    }
+    .send {
+        flex: 1;
+        padding-right: 4px;
+    }
+
+    #txtInput {
+        line-height: 30px;
+        padding: 8px 10px;
+        border: none;
+        outline: none;
+        caret-color: black;
+        font-size: 1rem;
+        width: 100%;
+    }
+    .chatbot-message,
+    .user-message {
+        padding: 8px;
+        background: #0652c0;
+        color: var(--light-color);
+        margin: 5px;
+        border-radius: 10px 3px 10px 10px;
+        text-align: start;
+    }
+
+    .chatbot-message {
+        background: #ccc;
+        color: #000;
+        align-self: flex-start;
+        border-radius: 3px 10px 10px 10px;
+    }
+</style>
+<body>
+    <div>
+        <div class="list-container">
+            <div class="chat-header">
+                <div class="title">Let's Chat</div>
+            </div>
+            
+        </div>
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="title">Let's Chat</div>
+            </div>
+            <div class="chat-body"></div>
+            <div class="chat-input">
+                <div class="input-sec">
+                    <input type="text" id="txtInput" placeholder="Type here" autofocus />
+                </div>
+                <div class="send">
+                    <input type="button" value="Send" onclick="sendMsg()"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script src="~/Scripts/jquery-2.2.4.min.js"></script>
+<script src="~/Scripts/jquery.signalR-2.4.1.min.js"></script>
+<script src="~/signalR/hubs" type="text/javascript"></script>
+<script>
+    $(function () {
+        var notifications = $.connection.notificationHub;
+        notifications.client.receiveNotification = function (broadcastMessage) {
+            //$("#broadcastMessage").text(broadcastMessage);
+            var jsonData = JSON.parse(broadcastMessage);
+            var printTable = '';
+            for (var i = 0; i < jsonData.length; i++) {
+                var data = jsonData[i];
+                printTable += '<div class="chatbot-message">' + data["BroadcastId"] + '</div>';
+                printTable += '<div class="user-message">' + data["BroadcastMessage"] + '</div>';
+            }
+            $('.chat-body').html(printTable);
+            setScrollPosition();
+        };
+
+        $.connection.hub.start().done(function () {
+            notifications.server.sendNotification()
+        }).fail(function (e) {
+            alert(e);
+        });
+    });
+    const setScrollPosition = () => {
+        const chatBody = document.querySelector(".chat-body");
+        if (chatBody.scrollHeight > 0) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    };
+    function sendMsg() {
+        var strInput = $('#txtInput').val();
+
+        param = {
+            strInput
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "@Url.Action("sendMsg", "Home")",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(param),
+            success: function (data) {
+                if (data.Status == "01") {
+                    $('#txtInput').val('');
+                }
+                else if (data.Status == "00") {
+                    //alert(data.Message);
+                }
+                else {
+                    alert("Unable to Check now. Please try again later.")
+                }
+            },
+            error: function (error) {
+                alert("errror");
+            }
+        });
+    }
+
+</script>
